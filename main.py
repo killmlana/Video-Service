@@ -10,7 +10,6 @@ import yt_dlp
 import re
 import json
 
-# Import the AWS Bedrock client functions
 from aws_bedrock_client import generate_questions_from_transcript, evaluate_responses, QuestionPair, EvaluationPair
 
 app = FastAPI()
@@ -21,7 +20,7 @@ client = AsyncIOMotorClient(MONGO_DB_URL)
 db = client.transcripts_db
 collection = db.transcripts
 
-# Models for request and response schemas
+# Models 
 class YouTubeLinkRequest(BaseModel):
     url: HttpUrl
 
@@ -46,7 +45,6 @@ class EvaluationReport(BaseModel):
     evaluation: dict
     finalized: bool
 
-# Helper function to extract transcript
 def extract_video_id(url: str) -> str:
     ydl_opts = {}
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -101,14 +99,12 @@ def clean_subtitle_file(subtitle_file: str) -> str:
                 cleaned_text.append(line)
     return ' '.join(cleaned_text)
 
-# Endpoint to extract transcript and save to MongoDB
 @app.post("/generate-transcript", response_model=TranscriptResponse)
 async def generate_transcript(data: YouTubeLinkRequest):
     try:
-        # Extract video ID
         video_id = extract_video_id(data.url)
 
-        # Check if transcript already exists in the database
+        # if transcript already exists in the database
         existing_transcript = await collection.find_one({"id": video_id})
         if existing_transcript:
             return {"_id": video_id, "transcript": existing_transcript['transcript']}
@@ -116,26 +112,23 @@ async def generate_transcript(data: YouTubeLinkRequest):
         # Extract transcript if not already in the database
         transcript = extract_transcript(data.url)
 
-        # Save transcript to MongoDB
+        # MongoDB save
         await collection.insert_one({"_id": video_id, "transcript": transcript})
         return {"_id": video_id, "transcript": transcript}
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Generate questions based on transcript
 @app.post("/generate-questions", response_model=GeneratedQuestionsResponse)
 async def generate_questions(data: QuestionGenerationRequest):
     try:
-        # Check if transcript already exists in MongoDB
+        # if transcript already exists in MongoDB
         existing_transcript = await collection.find_one({"_id": data.id})
         if not existing_transcript:
             raise HTTPException(status_code=404, detail="Transcript not found")
 
-        # Generate questions using the transcript
         question_pairs = generate_questions_from_transcript(data.transcript)
 
-        # Convert to response schema format
         response_pairs = [{"question": pair.question, "topic": pair.topic} for pair in question_pairs]
 
         return {"pairs": response_pairs}
@@ -143,7 +136,6 @@ async def generate_questions(data: QuestionGenerationRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Evaluate question-answer pairs and generate a report
 @app.post("/evaluate")
 async def evaluate_answers(data: EvaluationRequest):
     try:
@@ -182,7 +174,7 @@ async def evaluate_answers(data: EvaluationRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Run the server
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
