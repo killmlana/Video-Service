@@ -6,10 +6,9 @@ import re
 
 import boto3.session
 
-# AWS Bedrock setup (update with your correct region)
+# AWS Bedrock setup 
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')  # Adjust region if needed
 
-# Define request and response schemas
 class QuestionPair:
     def __init__(self, question: str, topic: str):
         self.question = question
@@ -21,7 +20,6 @@ class EvaluationPair:
         self.topic = topic
         self.answer = answer
 
-# Helper function to call the Claude 3 Sonnet model in AWS Bedrock
 def call_claude_model(prompt: str, model_name: str = "anthropic.claude-3-sonnet-20240229-v1:0") -> str:
     response = bedrock.invoke_model(
         modelId=model_name,
@@ -43,14 +41,12 @@ def call_claude_model(prompt: str, model_name: str = "anthropic.claude-3-sonnet-
     response_body = response["body"].read().decode('utf-8')
     print("Raw response:", response)
 
-    # Parse the JSON response
     result = json.loads(response_body)
     print(result)
     return result
 
 # Function to generate questions using the transcript
 def generate_questions_from_transcript(transcript: str) -> List[QuestionPair]:
-    # Prompt to generate questions
     prompt = f"Generate as many relevant questions as possible on the underlying topic (only questions, nothing else in the reponse body, separate them by \n and prefix each question line body with [topic-name] where topic-name is the relevant topic on which the question is asked) based on the following video transcript:\n\n{transcript}"
     generated_response = call_claude_model(prompt)
 
@@ -81,7 +77,6 @@ def generate_questions_from_transcript(transcript: str) -> List[QuestionPair]:
     return question_pairs
 
 
-# Function to evaluate student responses
 def evaluate_responses(pairs: List[EvaluationPair], system_prompt: str) -> str:
     # Build the evaluation prompt using the provided pairs and system prompt
     pairs_text = "\n".join([f"Question: {pair.question}\nAnswer: {pair.answer}\nTopic: {pair.topic}" for pair in pairs])
