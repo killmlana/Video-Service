@@ -58,7 +58,6 @@ def generate_questions_from_transcript(transcript: str) -> List[QuestionPair]:
     if isinstance(content, list):
         for item in content:
             if 'type' in item and item['type'] == 'text':
-                # Split the text into questions based on new lines
                 questions = item['text'].strip().split('\n')
                 for question in questions:
                     question = question.strip()
@@ -78,11 +77,9 @@ def generate_questions_from_transcript(transcript: str) -> List[QuestionPair]:
 
 
 def evaluate_responses(pairs: List[EvaluationPair], system_prompt: str) -> str:
-    # Build the evaluation prompt using the provided pairs and system prompt
     pairs_text = "\n".join([f"Question: {pair.question}\nAnswer: {pair.answer}\nTopic: {pair.topic}" for pair in pairs])
     full_prompt = f"{system_prompt}\n\n{pairs_text}\n\nPlease evaluate the student responses."
 
-    # Call the Claude 3 Sonnet model for evaluation
     response = call_claude_model(full_prompt)
     print(response)
     return response.get('content', {})
