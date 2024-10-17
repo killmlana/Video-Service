@@ -17,8 +17,9 @@ app = FastAPI()
 # MongoDB setup
 MONGO_DB_URL = "mongodb://localhost:27017"
 client = AsyncIOMotorClient(MONGO_DB_URL)
-db = client.transcripts_db
-collection = db.transcripts
+db = client.videoService_db
+transcriptCollection = db.transcripts
+questionCollection = db.questions
 
 # Models 
 class YouTubeLinkRequest(BaseModel):
@@ -105,33 +106,39 @@ async def generate_transcript(data: YouTubeLinkRequest):
         video_id = extract_video_id(data.url)
 
         # if transcript already exists in the database
-        existing_transcript = await collection.find_one({"id": video_id})
+        existing_transcript = await transcriptCollection.find_one({"_id": video_id})
         if existing_transcript:
-            return {"_id": video_id, "transcript": existing_transcript['transcript']}
+            return {"id": video_id, "transcript": existing_transcript['transcript']}
 
         # Extract transcript if not already in the database
         transcript = extract_transcript(data.url)
 
         # MongoDB save
-        await collection.insert_one({"_id": video_id, "transcript": transcript})
-        return {"_id": video_id, "transcript": transcript}
+        await transcriptCollection.insert_one({"_id": video_id, "transcript": transcript})
+        return {"id": video_id, "transcript": transcript}
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/generate-questions", response_model=GeneratedQuestionsResponse)
+@app.post("/generate-questions")
 async def generate_questions(data: QuestionGenerationRequest):
     try:
         # if transcript already exists in MongoDB
-        existing_transcript = await collection.find_one({"_id": data.id})
+        existing_transcript = await transcriptCollection.find_one({"_id": data.id})
         if not existing_transcript:
             raise HTTPException(status_code=404, detail="Transcript not found")
+        existing_questions = await questionCollection.find_one({"_id": data.id})
+        if existing_questions:
+            return {"id": data.id, "questions": existing_questions['questions']}
 
         question_pairs = generate_questions_from_transcript(data.transcript)
 
         response_pairs = [{"question": pair.question, "topic": pair.topic} for pair in question_pairs]
 
-        return {"pairs": response_pairs}
+        response = {"pairs": response_pairs}
+        await questionCollection.insert_one({"_id": data.id, "questions": response})
+
+        return {"id": data.id, "questions": response}
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
