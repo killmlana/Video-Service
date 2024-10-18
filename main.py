@@ -72,32 +72,64 @@ def extract_transcript(url: str) -> str:
             ydl.download([url])  # Download manual subtitles
             if os.path.exists(subtitle_filename):
                 return clean_subtitle_file(subtitle_filename)
+            elif os.path.exists(auto_subtitle_filename):
+                return clean_subtitle_file(auto_subtitle_filename)
             else:
-                raise Exception("Manual subtitles not downloaded")
+                raise Exception("Auto-generated subtitles not downloaded")
 
         elif 'en' in info.get('automatic_captions', {}):
             ydl.download([url])  # Download auto-generated subtitles
             if os.path.exists(auto_subtitle_filename):
                 return clean_subtitle_file(auto_subtitle_filename)
+            elif os.path.exists(subtitle_filename):
+                return clean_subtitle_file(subtitle_filename)
             else:
                 raise Exception("Auto-generated subtitles not downloaded")
         else:
             raise Exception("No subtitles available (manual or auto-generated)")
 
-def clean_subtitle_file(subtitle_file: str) -> str:
+import re
+
+def clean_subtitle_file(subtitle_file: str, min_words=3, max_words=10) -> str:
     cleaned_text = []
     with open(subtitle_file, 'r', encoding='utf-8') as f:
         for line in f:
             if re.match(r'^\d+$', line.strip()):
-                continue
+                continue  
             if '-->' in line:
-                continue
+                continue  
             line = re.sub(r'<[^>]*>|&\w+;', '', line)
             line = re.sub(r'\[.*?\]|\(.*?\)', '', line)
             line = line.strip()
             if line:
                 cleaned_text.append(line)
-    return ' '.join(cleaned_text)
+    text = ' '.join(cleaned_text)
+
+    text = remove_repeated_phrases(text, min_words, max_words)
+    return text
+
+def remove_repeated_phrases(text: str, min_words: int, max_words: int) -> str:
+    words = text.split()
+    i = 0
+    result_words = []
+    while i < len(words):
+        found_repeat = False
+        for n in range(max_words, min_words - 1, -1):
+            if i + n * 2 <= len(words):
+                phrase1 = words[i:i + n]
+                phrase2 = words[i + n:i + 2 * n]
+                if phrase1 == phrase2:
+                    repeats = 2
+                    while i + repeats * n <= len(words) and words[i + (repeats - 1) * n:i + repeats * n] == phrase1:
+                        repeats += 1
+                    result_words.extend(phrase1)
+                    i += (repeats - 1) * n  
+                    found_repeat = True
+                    break  
+        if not found_repeat:
+            result_words.append(words[i])
+            i += 1
+    return ' '.join(result_words)
 
 @app.post("/generate-transcript", response_model=TranscriptResponse)
 async def generate_transcript(data: YouTubeLinkRequest):
@@ -130,7 +162,7 @@ async def generate_questions(data: QuestionGenerationRequest):
         if existing_questions:
             return {"id": data.id, "questions": existing_questions['questions']}
 
-        question_pairs = generate_questions_from_transcript(data.transcript)
+        question_pairs = generate_questions_from_transcript(existing_transcript['transcript'])
 
         response_pairs = [{"question": pair.question, "topic": pair.topic} for pair in question_pairs]
 
@@ -146,7 +178,7 @@ async def generate_questions(data: QuestionGenerationRequest):
 async def evaluate_answers(data: EvaluationRequest):
     try:
         system_prompt = """You are an elementary school teacher who is assigned to evaluate question-answer pairs (answered by students). Respond in the following json schema, where reports is an array of report on each question
-        { "reports" = [
+        { "report":
             {
             "student_info": {
                 "UserId": "String"
