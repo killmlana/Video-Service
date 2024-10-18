@@ -31,7 +31,6 @@ class TranscriptResponse(BaseModel):
 
 class QuestionGenerationRequest(BaseModel):
     id: str
-    transcript: str
 
 class EvaluationRequest(BaseModel):
     pairs: List[dict]
