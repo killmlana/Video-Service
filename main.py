@@ -181,17 +181,15 @@ async def evaluate_answers(data: EvaluationRequest):
         {
             "evaluation": {
                 "score": "Number", out of 10,
-                "questions":
-                {
-                    "topic": "String",
-                    "question_text": "String",
-                    "student_answer": "String", 
-                    "insight_gained": boolean, check whether the student has understood the subject material
-                    "follow_up_required": boolean, make the decision if the student needs to have a followup question
-                    "feedback": "String" provide a feedback upon the answer provided
-                }
-            },
-        }</instruction>
+                "topic": "String",
+                "question_text": "String",
+                "student_answer": "String", 
+                "insight_gained": boolean, check whether the student has understood the subject material
+                "follow_up_required": boolean, make the decision if the student needs to have a followup question
+                "feedback": "String" provide a feedback upon the answer provided
+            }
+        },
+    }</instruction>
 """
         evaluation_pairs = [EvaluationPair(question=pair['question'], topic=pair['topic'], answer=pair['answer']) for pair in data.pairs]
         evaluation_response = evaluate_responses(evaluation_pairs, system_prompt)
