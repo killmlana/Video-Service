@@ -1,10 +1,33 @@
 version: '3.4'
 
 services:
-  videoservice:
-    image: videoservice
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+  mongodb:
+    image: mongo:latest  # Use the official MongoDB image
+    container_name: my_mongo  # Name for the MongoDB container
     ports:
-      - 8000:8000
+      - "27017:27017"  # Map the container's port to the host
+    volumes:
+      - mongo_data:/data/db  # Persist MongoDB data
+    restart: unless-stopped  # Automatically restart the container unless stopped manually
+    networks:
+      - mongo_network  # Connect to a specific network for isolation
+
+  videoservice:
+    image: videoservice  # Name of the Docker image for the Video Service
+    build:
+      context: .  # Build context is the current directory
+      dockerfile: ./Dockerfile  # Specify the Dockerfile location
+    ports:
+      - "8000:8000"  # Map the Video Service port to the host
+    depends_on:
+      - mongodb  # Ensure MongoDB starts before the Video Service
+    environment:
+      MONGO_DB_URL: "mongodb://mongodb:27017"  # Connection string to MongoDB
+    networks:
+      - mongo_network  # Connect to the same network as MongoDB
+
+volumes:
+  mongo_data:  # Define a named volume for MongoDB data persistence
+
+networks:
+  mongo_network:  # Define a custom network for your services
