@@ -179,7 +179,7 @@ async def evaluate_answers(data: EvaluationRequest):
     try:
         system_prompt = """You are an elementary school teacher who is assigned to evaluate question-answer pairs (answered by students). <instruction>Respond in the following json schema, where reports is an array of report on each question
         {
-            "evaluation": {
+            "evaluation": { , donot make an array, use this schema as it is strictly
                 "score": "Number", out of 10,
                 "topic": "String",
                 "question_text": "String",
