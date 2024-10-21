@@ -47,7 +47,17 @@ def call_claude_model(prompt: str, model_name: str = "anthropic.claude-3-sonnet-
 
 # Function to generate questions using the transcript
 def generate_questions_from_transcript(transcript: str) -> List[QuestionPair]:
-    prompt = f"Generate as many relevant questions as possible on the underlying topic (only questions, nothing else in the reponse body, separate them by \n and prefix each question line body with [topic-name] where topic-name is the relevant topic on which the question is asked) based on the following video transcript:\n\n{transcript}"
+    prompt = f"""Generate as many relevant questions as possible on the underlying topic based on the provided video transcript. Each question should be prefixed with the topic name in square brackets, and the questions should be listed without any introductory phrases. Separate each question with a newline character. Use the following schema:
+
+[TOPIC] 1. Question 1
+[TOPIC] 2. Question 2
+[TOPIC] 3. Question 3
+...
+[TOPIC] N. Question N
+
+Here is the video transcript:
+{transcript}
+"""
     generated_response = call_claude_model(prompt)
 
     # Extracting the generated questions from the content field
