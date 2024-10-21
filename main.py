@@ -2,6 +2,7 @@
 import uuid
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 from typing import List
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -13,6 +14,15 @@ import json
 from aws_bedrock_client import generate_questions_from_transcript, evaluate_responses, QuestionPair, EvaluationPair
 
 app = FastAPI()
+origins = ["*"] 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
 
 # MongoDB setup
 MONGO_DB_URL = "mongodb://localhost:27017"
