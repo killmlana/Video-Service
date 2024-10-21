@@ -31,7 +31,7 @@ def call_claude_model(prompt: str, model_name: str = "anthropic.claude-3-sonnet-
             "messages": [
                 {
                     "role": "user",  # Use 'user' role to provide input
-                    "content": f"You are an elementary school teacher. {prompt}"
+                    "content": f"<system>You are an elementary school teacher. So you will be dealing with kids, be lenient and encouraging in your responses.</system> {prompt}"
                 }
             ]
         })
