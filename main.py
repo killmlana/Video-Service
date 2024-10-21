@@ -177,15 +177,11 @@ async def generate_questions(data: QuestionGenerationRequest):
 @app.post("/evaluate")
 async def evaluate_answers(data: EvaluationRequest):
     try:
-        system_prompt = """You are an elementary school teacher who is assigned to evaluate question-answer pairs (answered by students). Respond in the following json schema, where reports is an array of report on each question
-        { "report":
-            {
-            "student_info": {
-                "UserId": "String"
-            },
+        system_prompt = """You are an elementary school teacher who is assigned to evaluate question-answer pairs (answered by students). <instruction>Respond in the following json schema, where reports is an array of report on each question
+        {
             "evaluation": {
-                "total_score": "Float",
-                "questions": [
+                "score": "Number", out of 10,
+                "questions":
                 {
                     "topic": "String",
                     "question_text": "String",
@@ -194,11 +190,8 @@ async def evaluate_answers(data: EvaluationRequest):
                     "follow_up_required": boolean, make the decision if the student needs to have a followup question
                     "feedback": "String" provide a feedback upon the answer provided
                 }
-                ]
             },
-            "finalized": true
-            }]
-        }
+        }</instruction>
 """
         evaluation_pairs = [EvaluationPair(question=pair['question'], topic=pair['topic'], answer=pair['answer']) for pair in data.pairs]
         evaluation_response = evaluate_responses(evaluation_pairs, system_prompt)
