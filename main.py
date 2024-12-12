@@ -17,21 +17,21 @@ from dotenv import load_dotenv
 
 security = HTTPBearer()
 
-if(type(os.getenv('JWT_SECRET_KEY')) != str):
-    SystemExit
-
-SECRET_KEY = bytes.fromhex(os.getenv('JWT_SECRET_KEY'))
+SECRET_KEY = ''
 ALGORITHM = "HS256"
+
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
     try:
         token = credentials.credentials
+        if token.startswith('Bearer '):
+            token = token[7:]
+            
         payload = jwt.decode(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM]
         )
-            
         return payload
     except jwt.InvalidTokenError as e:
         print(f"JWT Validation Error: {str(e)}")
