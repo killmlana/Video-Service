@@ -20,22 +20,20 @@ security = HTTPBearer()
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
 
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+ALGORITHM = "HS256"
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
     try:
         token = credentials.credentials
-        # Add padding if needed
-        padding_length = len(token) % 4
-        if padding_length:
-            token += '=' * (4 - padding_length)
-            
         payload = jwt.decode(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM]
         )
         return payload
-    except JWTError as e:
-        print(f"JWT Validation Error: {str(e)}")  # For debugging
+    except jwt.InvalidTokenError as e:
+        print(f"JWT Validation Error: {str(e)}")
         raise HTTPException(
             status_code=401,
             detail=f"Invalid authentication credentials: {str(e)}"
