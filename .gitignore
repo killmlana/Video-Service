@@ -3,3 +3,4 @@
 /vit-project-bedrock_accessKeys.csv
 /.venv
 /transcripts/*
+/.env

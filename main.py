@@ -10,6 +10,28 @@ import os
 import yt_dlp
 import re
 import json
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Security, Depends
+from jose import jwt, JWTError
+from dotenv import load_dotenv
+
+security = HTTPBearer()
+
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+ALGORITHM = "HS256"
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication credentials"
+        )
 
 from aws_bedrock_client import generate_questions_from_transcript, evaluate_responses, QuestionPair, EvaluationPair
 
@@ -142,7 +164,7 @@ def remove_repeated_phrases(text: str, min_words: int, max_words: int) -> str:
     return ' '.join(result_words)
 
 @app.post("/generate-transcript", response_model=TranscriptResponse)
-async def generate_transcript(data: YouTubeLinkRequest):
+async def generate_transcript(data: YouTubeLinkRequest, current_user: dict = Depends(get_current_user)):
     try:
         video_id = extract_video_id(data.url)
 
@@ -162,7 +184,7 @@ async def generate_transcript(data: YouTubeLinkRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/generate-questions")
-async def generate_questions(data: QuestionGenerationRequest):
+async def generate_questions(data: QuestionGenerationRequest, current_user: dict = Depends(get_current_user)):
     try:
         # if transcript already exists in MongoDB
         existing_transcript = await transcriptCollection.find_one({"_id": data.id})
@@ -185,7 +207,7 @@ async def generate_questions(data: QuestionGenerationRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/evaluate")
-async def evaluate_answers(data: EvaluationRequest):
+async def evaluate_answers(data: EvaluationRequest, current_user: dict = Depends(get_current_user)):
     try:
         system_prompt = """You are an elementary school teacher who is assigned to evaluate question-answer pairs (answered by students). <instruction>Respond in the following json schema, where reports is an array of report on each question
         {
