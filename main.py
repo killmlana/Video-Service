@@ -12,7 +12,7 @@ import re
 import json
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Security, Depends
-from jose import jwt, JWTError
+import jwt
 from dotenv import load_dotenv
 
 security = HTTPBearer()
