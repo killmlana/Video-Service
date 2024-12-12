@@ -23,15 +23,19 @@ ALGORITHM = "HS256"
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
     try:
         token = credentials.credentials
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        
-        
+        payload = jwt.decode(
+            token, 
+            SECRET_KEY, 
+            algorithms=[ALGORITHM]
+        )
         return payload
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT Validation Error: {str(e)}")  # For debugging
         raise HTTPException(
             status_code=401,
-            detail="Invalid authentication credentials"
+            detail=f"Invalid authentication credentials: {str(e)}"
         )
+
 
 from aws_bedrock_client import generate_questions_from_transcript, evaluate_responses, QuestionPair, EvaluationPair
 
