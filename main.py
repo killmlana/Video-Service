@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 security = HTTPBearer()
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+SECRET_KEY = bytes.fromhex(os.getenv('JWT_SECRET_KEY'))
 ALGORITHM = "HS256"
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
@@ -28,6 +28,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
             SECRET_KEY,
             algorithms=[ALGORITHM]
         )
+            
         return payload
     except jwt.InvalidTokenError as e:
         print(f"JWT Validation Error: {str(e)}")
