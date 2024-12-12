@@ -17,6 +17,9 @@ from dotenv import load_dotenv
 
 security = HTTPBearer()
 
+if(type(os.getenv('JWT_SECRET_KEY')) != str):
+    SystemExit
+
 SECRET_KEY = bytes.fromhex(os.getenv('JWT_SECRET_KEY'))
 ALGORITHM = "HS256"
 
